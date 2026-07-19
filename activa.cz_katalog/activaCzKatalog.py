@@ -18,28 +18,42 @@ def ziskej_data_z_url(url):
     soup = BeautifulSoup(response.content, 'html.parser')
     
     # Získání kategorie a typu z URL
-    # Příklad: www.activa.cz/papir/barevny-papir/?count=48
     casti = url.split('/')
-    typ = casti[3] # 'papir'
-    kategorie = casti[4].split('?')[0] # 'barevny-papir'
+    typ = casti[3] 
+    kategorie = casti[4].split('?')[0]
     
     data = []
+    # Procházení všech produktových karet
     for karta in soup.find_all('div', class_='pcard'):
         try:
+            # Získání základních informací
             nazev = karta.find('h2', class_='pcard__title').get_text(strip=True)
             id_cislo = karta.find('div', class_='pcard__desc').find('strong').get_text(strip=True)
             
+            # Získání obrázku z pcard__header
+            header = karta.find('div', class_='pcard__header')
+            img_tag = header.find('img') if header else None
+            img_url = img_tag.get('src') if img_tag else "N/A"
+            
+            # Získání cen
             container = karta.find('div', class_='pcvar__container')
             cena_bez = container.find('span', class_='currency_main').find('strong').get_text(strip=True) if container else "N/A"
             cena_s = container.find('span', class_='pcvar__vat').find('strong').get_text(strip=True) if container else "N/A"
             
             data.append({
-                'Jméno': nazev, 'ID číslo': id_cislo, 
-                'Cena bez DPH': cena_bez, 'Cena s DPH': cena_s,
-                'Typ': typ, 'Kategorie': kategorie
+                'Jméno': nazev, 
+                'ID číslo': id_cislo, 
+                'Obrázek': img_url,
+                # Takhle to bude fungovat bez chyby:
+                'Cena bez DPH': f"{cena_bez} Kč", 
+                'Cena s DPH': cena_s,
+                'Typ': typ, 
+                'Kategorie': kategorie
             })
         except Exception:
+            # Pokud se u jedné karty nepodaří něco vytáhnout, přeskočíme ji
             continue
+            
     return data
 
 seznam_url = [
